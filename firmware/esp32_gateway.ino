@@ -1,6 +1,7 @@
 #include <WiFi.h>
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
+#include <cstring>
 
 const char *WIFI_SSID = "YOUR_WIFI_SSID";
 const char *WIFI_PASSWORD = "YOUR_WIFI_PASSWORD";
@@ -20,6 +21,9 @@ constexpr unsigned long COMMAND_POLL_INTERVAL_MS = 3000;
 unsigned long lastHeartbeatMs = 0;
 unsigned long lastCommandPollMs = 0;
 bool solenoidUnlocked = false;
+bool uartOk = false;
+bool i2cOk = false;
+bool rfidOk = false;
 
 String endpoint(const char *path) {
   return String(API_BASE) + path;
@@ -59,16 +63,20 @@ void sendHeartbeat() {
   const String body = String("{\"device_id\":\"") + DEVICE_ID +
     "\",\"ip_address\":\"" + WiFi.localIP().toString() +
     "\",\"wifi_rssi\":" + String(WiFi.RSSI()) +
-    ",\"uart_ok\":true,\"i2c_ok\":true,\"rfid_ok\":true,\"esp32_ok\":true,\"solenoid_state\":\"" +
+    ",\"uart_ok\":" + String(uartOk ? "true" : "false") +
+    ",\"i2c_ok\":" + String(i2cOk ? "true" : "false") +
+    ",\"rfid_ok\":" + String(rfidOk ? "true" : "false") +
+    ",\"esp32_ok\":true,\"solenoid_state\":\"" +
     (solenoidUnlocked ? "UNLOCKED" : "LOCKED") + "\"}";
   postJson("/api/gateway/heartbeat", body);
 }
 
-void sendGatewayEvent(const String &source, const String &value, const String &status, unsigned long elapsedMs) {
+void sendGatewayEvent(const String &eventType, const String &source, const String &value, const String &status, unsigned long elapsedMs) {
   StaticJsonDocument<256> document;
-  document["event_type"] = "ACCESS_ATTEMPT";
+  document["event_type"] = eventType;
   document["source"] = source;
-  document["credential_value"] = value.length() ? value : String();
+  if (value.length()) document["credential_value"] = value;
+  else document["credential_value"] = nullptr;
   document["status"] = status;
   document["process_time_ms"] = elapsedMs;
   String body;
@@ -105,7 +113,22 @@ void handleControllerMessage(const String &line) {
     return;
   }
 
-  // Optional controller event line: EVENT,<PIN|RFID|MOCK_RFID>,<value>,<GRANTED|DENIED>,<ms>
+  // Controller diagnostics: DIAG,<UART|I2C|RFID>,<OK|FAIL>
+  if (line.startsWith("DIAG,")) {
+    const int separator = line.indexOf(',', 5);
+    if (separator < 0) return;
+    const String subsystem = line.substring(5, separator);
+    const String result = line.substring(separator + 1);
+    const bool ok = result == "OK";
+    if (subsystem == "UART") uartOk = ok;
+    else if (subsystem == "I2C") i2cOk = ok;
+    else if (subsystem == "RFID") rfidOk = ok;
+    else return;
+    sendGatewayEvent("DIAGNOSTIC", "GATEWAY", subsystem + String("=") + result, "EXECUTED", 0);
+    return;
+  }
+
+  // Controller access event: EVENT,<PIN|RFID|MOCK_RFID>,<value>,<GRANTED|DENIED>,<ms>
   if (!line.startsWith("EVENT,")) return;
   const int first = line.indexOf(',', 6);
   const int second = line.indexOf(',', first + 1);
@@ -116,13 +139,14 @@ void handleControllerMessage(const String &line) {
   const String result = line.substring(second + 1, third);
   const unsigned long elapsedMs = line.substring(third + 1).toInt();
   if ((source == "PIN" || source == "RFID" || source == "MOCK_RFID") && (result == "GRANTED" || result == "DENIED")) {
-    sendGatewayEvent(source, value, result, elapsedMs);
+    sendGatewayEvent("ACCESS_ATTEMPT", source, value, result, elapsedMs);
   }
 }
 
 void setup() {
   Serial.begin(115200);
   Serial2.begin(9600, SERIAL_8N1, UART_RX_PIN, UART_TX_PIN);
+  uartOk = true;
   pinMode(RELAY_PIN, OUTPUT);
   digitalWrite(RELAY_PIN, LOW);
   WiFi.mode(WIFI_STA);

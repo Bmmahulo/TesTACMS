@@ -10,7 +10,7 @@ export type Credential = {
 export type AccessEvent = {
   id: string;
   event_type: "ACCESS_ATTEMPT" | "REMOTE_UNLOCK" | "DIAGNOSTIC";
-  source: "PIN" | "RFID" | "MOCK_RFID" | "DASHBOARD" | "WEB_REMOTE";
+  source: "PIN" | "RFID" | "MOCK_RFID" | "DASHBOARD" | "WEB_REMOTE" | "GATEWAY";
   credential_value: string | null;
   status: "GRANTED" | "DENIED" | "QUEUED" | "EXECUTED";
   process_time_ms: number | null;

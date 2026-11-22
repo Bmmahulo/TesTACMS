@@ -26,13 +26,17 @@ create table if not exists public.unlock_commands (
 create table if not exists public.access_events (
   id uuid primary key default gen_random_uuid(),
   event_type text not null check (event_type in ('ACCESS_ATTEMPT', 'REMOTE_UNLOCK', 'DIAGNOSTIC')),
-  source text not null check (source in ('PIN', 'RFID', 'MOCK_RFID', 'DASHBOARD', 'WEB_REMOTE')),
+  source text not null check (source in ('PIN', 'RFID', 'MOCK_RFID', 'DASHBOARD', 'WEB_REMOTE', 'GATEWAY')),
   credential_value text,
   status text not null check (status in ('GRANTED', 'DENIED', 'QUEUED', 'EXECUTED')),
   process_time_ms integer check (process_time_ms is null or process_time_ms >= 0),
   command_id uuid references public.unlock_commands(id) on delete set null,
   created_at timestamptz not null default now()
 );
+
+alter table public.access_events drop constraint if exists access_events_source_check;
+alter table public.access_events add constraint access_events_source_check
+  check (source in ('PIN', 'RFID', 'MOCK_RFID', 'DASHBOARD', 'WEB_REMOTE', 'GATEWAY'));
 
 create table if not exists public.gateway_heartbeats (
   id uuid primary key default gen_random_uuid(),

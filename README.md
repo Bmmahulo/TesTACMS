@@ -98,7 +98,7 @@ EVENT,PIN,1111,GRANTED,142
 EVENT,RFID,FA1C6AE7,DENIED,209
 ```
 
-The event line is a simple CSV protocol; keep values comma-free. The gateway also polls commands every three seconds, pulses the relay for the command's bounded `pulse_ms` (normally 2,000), and acknowledges completion over HTTP. Heartbeats are sent every ten seconds. Configure heartbeat subsystem flags to reflect actual self-tests for the final hardware build. `GPIO27` is driven HIGH during the pulse and LOW otherwise; verify that this matches the polarity of your relay module before connecting the solenoid.
+Subsystem diagnostics use `DIAG,<UART|I2C|RFID>,<OK|FAIL>` (for example `DIAG,I2C,OK`). These update heartbeat health and are logged as `DIAGNOSTIC` events with source `GATEWAY`. The event line is a simple CSV protocol; keep values comma-free. The gateway also polls commands every three seconds, pulses the relay for the command's bounded `pulse_ms` (normally 2,000), and acknowledges completion over HTTP. Heartbeats are sent every ten seconds. `GPIO27` is driven HIGH during the pulse and LOW otherwise; verify that this matches the polarity of your relay module before connecting the solenoid.
 
 ## Operational notes
 

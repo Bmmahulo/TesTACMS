@@ -42,7 +42,7 @@ export const heartbeatSchema = z.object({
 
 export const gatewayEventSchema = z.object({
   event_type: z.enum(["ACCESS_ATTEMPT", "REMOTE_UNLOCK", "DIAGNOSTIC"]).default("ACCESS_ATTEMPT"),
-  source: z.enum(["PIN", "RFID", "MOCK_RFID", "WEB_REMOTE", "DASHBOARD"]),
+  source: z.enum(["PIN", "RFID", "MOCK_RFID", "WEB_REMOTE", "DASHBOARD", "GATEWAY"]),
   credential_value: z.string().trim().max(80).nullable().optional(),
   status: z.enum(["GRANTED", "DENIED", "QUEUED", "EXECUTED"]),
   process_time_ms: z.number().int().min(0).max(600000).nullable().optional(),

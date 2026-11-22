@@ -49,7 +49,7 @@ const demoGateway: GatewayStatus = {
 
 type AuthState = "checking" | "locked" | "ready" | "unavailable";
 type OutcomeFilter = "ALL" | "GRANTED" | "DENIED";
-type SourceFilter = "ALL" | "PIN" | "RFID" | "DASHBOARD";
+type SourceFilter = "ALL" | "PIN" | "RFID" | "DASHBOARD" | "GATEWAY";
 
 function formatTime(date: string) {
   return new Intl.DateTimeFormat("en", { hour: "2-digit", minute: "2-digit", second: "2-digit" }).format(new Date(date));
