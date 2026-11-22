@@ -1,0 +1,12 @@
+services:
+  acams-web:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
+      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
+      ESP32_API_KEY: ${ESP32_API_KEY}
+      ACAMS_DASHBOARD_KEY: ${ACAMS_DASHBOARD_KEY}
+      GATEWAY_VALIDATE_CREDENTIALS: ${GATEWAY_VALIDATE_CREDENTIALS:-false}
+    restart: unless-stopped
